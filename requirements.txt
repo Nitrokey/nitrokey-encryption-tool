@@ -1,0 +1,8 @@
+progress
+ecdsa
+python-pkcs11
+pycrypto
+pyasn1
+pyasn1_modules
+tqdm
+argparse
