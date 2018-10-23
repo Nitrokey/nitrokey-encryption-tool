@@ -23,5 +23,6 @@ python3 encryption_tool.py --verbose encrypt $plain $encr $kid
 python3 encryption_tool.py --verbose --pin 123456 decrypt $encr $decr $kid
 
 diff $plain $decr | head -3
+diff <(xxd $plain) <(xxd $decr) | head -5
 wc -l $plain $decr
 ls -l $plain $decr
