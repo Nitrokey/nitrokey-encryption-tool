@@ -470,6 +470,7 @@ if __name__ == "__main__":
             encrypt_data(args.input, args.output, args.keyid, args.token)
         except:
             print('Encryption failed. ' + ERROR_MESSAGE)
+            logger.exception('Failed while encrypting')
 
     with get_session(tokenID=args.token, skipPin=True) as session:
         if args.cmd == 'list_public_keys':
@@ -480,6 +481,7 @@ if __name__ == "__main__":
             decrypt_data(args.token, args.pin, args.input, args.output, args.keyid)
         except:
             print('Decryption failed. ' + ERROR_MESSAGE)
+            logger.exception('Failed while decrypting')
 
     elif args.cmd == 'create_keys':
         try:
@@ -490,6 +492,7 @@ if __name__ == "__main__":
         except:
             print('Key generation failed. It will not work with OpenSC 0.16 - make sure you are not using it.',
                   file=sys.stderr, flush=True)
+            logger.exception('Failed while creating keys')
             exit(1)
 
     elif args.cmd == 'status':
