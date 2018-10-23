@@ -239,7 +239,8 @@ def decrypt_data(tokenID, pin, istream, ostream, keyid):
 
         key_aes_data = istream.read(read_bytes_count)
         iv_data = istream.read(read_bytes_count)
-
+        sizemod16 = int.from_bytes(istream.read(1), 'big')
+        log.info('Read sizemod16: {:02x}'.format(sizemod16))
         log.info('Reading data')
         data = istream.read(read_bytes_count)
         data_array = []
@@ -255,12 +256,18 @@ def decrypt_data(tokenID, pin, istream, ostream, keyid):
 
         log.info('Decrypting data using AES key')
         # decrypt data with AES
-        data_len = 0
+        decrypted = b''
         from tqdm import tqdm
         for data in tqdm(data_array, desc='Decrypting data', maxinterval=0.5):
-            decrypted = key_aes.decrypt(data)
-            ostream.write(decrypted)
-            data_len = + len(decrypted)
+            decrypted += key_aes.decrypt(data)
+
+        data_len = len(decrypted)
+
+        if sizemod16 != 0:
+            decrypted = decrypted[:-(16-sizemod16)]
+
+        ostream.write(decrypted)
+
         log.info('Written {} bytes'.format(data_len))
         log.info('Closing files')
         istream.close()
@@ -301,10 +308,17 @@ def encrypt_data(istream, ostream, keyid: int, token: int):
         log.info('Written {} bytes'.format(len(encrypted)))
 
         log.info('Encrypting data')
+        istream.seek(0, os.SEEK_END)
+        data_len = istream.tell()
+        istream.seek(0, os.SEEK_SET)
+        sizemod16 = data_len % 16
+        args.output.write(sizemod16.to_bytes(1, 'big'))
+        log.info('Write sizemod16: {:02x}'.format(sizemod16))
+
         data = istream.read(PLAINTEXT_READ_BYTES_COUNT[rsa_key_length])
         data_len = len(data)
+        divisor = 16
         while data:
-            divisor = 16
             if len(data) == 0:
                 break
             elif len(data) % divisor != 0:
