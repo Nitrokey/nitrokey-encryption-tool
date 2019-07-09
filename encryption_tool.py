@@ -23,7 +23,9 @@ except:
         return x
     def get_logger(x):
         return logging.getLogger('main')
-    pkcs_module_path = ['/usr/lib/x86_64-linux-gnu/pkcs11/opensc-pkcs11.so', '/usr/local/lib/pkcs11/opensc-pkcs11.so']
+    pkcs_module_path = ['/usr/lib/x86_64-linux-gnu/pkcs11/opensc-pkcs11.so', '/usr/local/lib/pkcs11/opensc-pkcs11.so',
+                        '/usr/lib64/pkcs11/opensc-pkcs11.so', # Fedora
+                        ]
 
 # consts for 4096
 ERROR_MESSAGE = 'Make sure device is inserted and the keys are generated already (RSA2048 or RSA ' \
