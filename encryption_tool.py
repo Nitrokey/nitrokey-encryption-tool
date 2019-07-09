@@ -337,21 +337,28 @@ def encrypt_data(istream, ostream, keyid: int, token: int):
         ostream.close()
         print(' ', file=sys.stderr)
 
+def chunks(l, n, pad=None):
+    n = max(1, n)
+    return (l[i:i+n] for i in range(0, len(l), n))
+
+from timeit import default_timer as timer
+
 
 def print_status(token: int, pin: str):
     log.info('Printing status data')
     working = []
+    success = False
     with get_session(tokenID=token, pin=pin) as session:
         pubs = get_public_keys(session)
         privs = get_private_keys(session)
         print('Investigating device {}'.format(token))
         print('Public/private RSA keys found: {}/{}'.format(len(pubs), len(privs)))
         data = os.urandom(16)
-        for i in range(len(pubs)):
+        for i, public_key in enumerate(pubs):
             dec = bytes()
             enc = bytes()
-            print('\nTest key {}: {}'.format(i, pubs[i]))
-            key_rsa_pub = import_public_key(pubs[i])
+            print('\nTest key {}: {}'.format(i, public_key))
+            key_rsa_pub = import_public_key(public_key)
 
             try:
                 enc = encrypt_data_device(data, key_rsa_pub)
@@ -363,10 +370,23 @@ def print_status(token: int, pin: str):
             if data.hex() == dec.hex():
                 print('success')
                 working.append((token, i))
+                success = True
             else:
                 print('failure')
                 log.info('Data: {}'.format(data.hex()))
                 log.info('Decrypted: {}'.format(dec.hex()))
+            if success:
+                data_big = os.urandom(20*240)
+                data_big = chunks(data_big, 240, 0)
+                from tqdm import tqdm
+                start = timer()
+                for data in tqdm(data_big, unit='record', total=20):
+                    enc = encrypt_data_device(data, key_rsa_pub)
+                    dec = _decrypt_on_device(enc, privs[i])
+                end = timer()
+                time_req = end - start
+                print(f'{round(time_req,2)}s -> {round((20*240/time_req))} B/s')
+
     return working
 
 
